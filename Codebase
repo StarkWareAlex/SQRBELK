@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Dino Runner with Custom Images</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f0f0; /* Цвет фона для всей страницы */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        #game {
+            width: 800px; /* Увеличена ширина игрового окна */
+            height: 200px;
+            border: 1px solid #000;
+            position: relative;
+            background-image: url('background1.png'); /* Замените на ваше изображение фона */
+            background-size: cover;
+            background-position: center;
+        }
+        #player {
+            width: 70px;
+            height: 70px;
+            background-image: url('squirrel.png'); /* Замените на ваше изображение игрока */
+            background-size: cover;
+            position: absolute;
+            bottom: 0;
+            left: 50px;
+        }
+        .obstacle {
+            width: 100px;
+            height: 100px;
+            background-image: url('Cop.png'); /* Замените на ваше изображение препятствия */
+            background-size: cover;
+            position: absolute;
+            bottom: 0;
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px; /* Изменено на левый верхний угол */
+            font-size: 24px;
+            color: #fff; /* Белый цвет для счета очков */
+        }
+        #game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            color: #ff0000; /* Красный цвет для сообщения "GAME OVER" */
+            display: none;
+        }
+        #final-score {
+            position: absolute;
+            top: 70%; /* Изменено на 70% для размещения еще ниже "GAME OVER" */
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 36px; /* Увеличен размер шрифта */
+            color: #fff; /* Белый цвет для финального счета */
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="game">
+        <div id="player"></div>
+        <div id="score">Score: 0</div>
+        <div id="game-over">GAME OVER</div>
+        <div id="final-score">Final Score: 0</div>
+    </div>
+
+    <script>
+        const player = document.getElementById('player');
+        const scoreElement = document.getElementById('score');
+        const gameOverElement = document.getElementById('game-over');
+        const finalScoreElement = document.getElementById('final-score');
+        let isJumping = false;
+        let playerBottom = 0;
+        let score = 0;
+        let obstacles = [];
+        let obstacleSpeed = 4; // Скорость движения препятствий
+        let obstacleInterval = 1000; // Интервал между появлением препятствий
+        let gameRunning = true;
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === ' ' && !isJumping) {
+                if (!gameRunning) {
+                    resetGame();
+                } else {
+                    jump();
+                }
+            }
+        });
+
+        function jump() {
+            isJumping = true;
+            let upInterval = setInterval(() => {
+                if (playerBottom >= 150) {
+                    clearInterval(upInterval);
+                    let downInterval = setInterval(() => {
+                        if (playerBottom <= 0) {
+                            clearInterval(downInterval);
+                            isJumping = false;
+                        }
+                        playerBottom -= 5;
+                        player.style.bottom = playerBottom + 'px';
+                    }, 10); // Уменьшен интервал до 10 миллисекунд
+                }
+                playerBottom += 5;
+                player.style.bottom = playerBottom + 'px';
+            }, 10); // Уменьшен интервал до 10 миллисекунд
+        }
+
+        function createObstacle() {
+            if (!gameRunning) return;
+            const newObstacle = document.createElement('div');
+            newObstacle.classList.add('obstacle');
+            newObstacle.style.left = '800px'; // Обновлено для новой ширины игрового окна
+            document.getElementById('game').appendChild(newObstacle);
+            obstacles.push(newObstacle);
+            setTimeout(createObstacle, obstacleInterval);
+        }
+
+        function moveObstacles() {
+            if (!gameRunning) return;
+            obstacles.forEach((obstacle, index) => {
+                let obstacleLeft = parseInt(obstacle.style.left);
+                obstacleLeft -= obstacleSpeed;
+                obstacle.style.left = obstacleLeft + 'px';
+
+                if (obstacleLeft < 0) {
+                    obstacles.splice(index, 1);
+                    obstacle.remove();
+                    score++;
+                    scoreElement.textContent = `Score: ${score}`;
+                }
+
+                if (obstacleLeft < 100 && obstacleLeft > 50 && playerBottom < 20) {
+                    gameOver();
+                }
+            });
+
+            requestAnimationFrame(moveObstacles);
+        }
+
+        function gameOver() {
+            gameRunning = false;
+            gameOverElement.style.display = 'block';
+            finalScoreElement.textContent = `Final Score: ${score}`;
+            finalScoreElement.style.display = 'block';
+            obstacles.forEach(obstacle => obstacle.remove());
+            obstacles = [];
+            score = 0;
+            scoreElement.textContent = `Score: ${score}`;
+        }
+
+        function resetGame() {
+            gameRunning = true;
+            gameOverElement.style.display = 'none';
+            finalScoreElement.style.display = 'none';
+            playerBottom = 0;
+            player.style.bottom = playerBottom + 'px';
+            obstacles = [];
+            score = 0;
+            scoreElement.textContent = `Score: ${score}`;
+            createObstacle();
+            moveObstacles();
+        }
+
+        createObstacle();
+        moveObstacles();
+    </script>
+</body>
+</html>
